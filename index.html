@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="sl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JUB Barvanje Sten | AI Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --jub-dark: #1c1c1c;
+      --jub-dark-gray: #333333;
+      --jub-light-gray: #E5E5E2;
+      --jub-off-white: #f8f7f4;
+      --jub-accent: #B22234;
+      --jub-sand: #E8E4DC;
+      --jub-shadow: rgba(0, 0, 0, 0.12);
+      --jub-shadow-lg: rgba(0, 0, 0, 0.18);
+
+      /* Color swatches */
+      --color-1: #F3BE93;
+      /* Joy 10 */
+      --color-2: #AABDDF;
+      /* Freedom 15 */
+      --color-3: #FFADA7;
+      /* Passion 15 */
+      --color-4: #D2EEEB;
+      /* Vitality 30 */
+      --color-5: #DE8EAD;
+      /* Faith 20 */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: linear-gradient(180deg, #fafafa 0%, var(--jub-light-gray) 100%);
+      color: var(--jub-dark);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--jub-dark);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      height: 40px;
+    }
+
+    .header-title {
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Main Content */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .title-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .title-section h1 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--jub-dark);
+    }
+
+    .title-section p {
+      font-size: 16px;
+      color: #666;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* App Container */
+    .app-container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px var(--jub-shadow);
+      overflow: hidden;
+    }
+
+    /* Steps */
+    .steps {
+      display: grid;
+      gap: 0;
+    }
+
+    .step {
+      padding: 32px;
+      border-bottom: 1px solid var(--jub-light-gray);
+    }
+
+    .step:last-child {
+      border-bottom: none;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      background: var(--jub-dark);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed var(--jub-light-gray);
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--jub-off-white);
+    }
+
+    .upload-area:hover {
+      border-color: var(--jub-dark);
+      background: white;
+    }
+
+    .upload-area.has-image {
+      padding: 16px;
+      border-style: solid;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      opacity: 0.5;
+    }
+
+    .upload-text {
+      color: #666;
+      font-size: 15px;
+    }
+
+    .upload-text strong {
+      color: var(--jub-dark);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Image Preview */
+    .image-preview {
+      display: none;
+      background: #f0f0f0;
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .image-preview.visible {
+      display: block;
+    }
+
+    #uploadedImage {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      max-height: 60vh;
+      margin: 0 auto;
+    }
+
+    .wall-input {
+      display: none;
+      margin-top: 16px;
+      background: var(--jub-off-white);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid var(--jub-light-gray);
+    }
+
+    .wall-input.visible {
+      display: block;
+    }
+
+    .wall-input label {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .wall-input textarea {
+      width: 100%;
+      min-height: 90px;
+      border-radius: 10px;
+      border: 1px solid var(--jub-light-gray);
+      padding: 12px;
+      font-size: 14px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .wall-actions {
+      display: none;
+      gap: 16px;
+      align-items: center;
+      padding-top: 12px;
+    }
+
+    .wall-actions.visible {
+      display: flex;
+    }
+
+    .btn-clear {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--jub-dark);
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover {
+      background: var(--jub-dark);
+      color: white;
+    }
+
+    /* Color Palette */
+    .color-palette {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch {
+      position: relative;
+      width: 80px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .color-swatch:hover {
+      transform: translateY(-2px);
+    }
+
+    .color-swatch.active .swatch-circle {
+      box-shadow: 0 0 0 3px var(--jub-dark), 0 6px 20px var(--jub-shadow-lg);
+      transform: scale(1.05);
+    }
+
+    .swatch-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 8px;
+      box-shadow: 0 4px 12px var(--jub-shadow);
+      transition: all 0.2s ease;
+    }
+
+    .swatch-name {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+
+    .color-1 .swatch-circle {
+      background: var(--color-1);
+    }
+
+    .color-2 .swatch-circle {
+      background: var(--color-2);
+    }
+
+    .color-3 .swatch-circle {
+      background: var(--color-3);
+    }
+
+    .color-4 .swatch-circle {
+      background: var(--color-4);
+    }
+
+    .color-5 .swatch-circle {
+      background: var(--color-5);
+    }
+
+    /* Action Button */
+    .action-section {
+      padding: 32px;
+      background: var(--jub-off-white);
+      text-align: center;
+    }
+
+    .btn-start {
+      padding: 16px 48px;
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--jub-dark);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-start:hover:not(:disabled) {
+      background: #333;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px var(--jub-shadow-lg);
+    }
+
+    .btn-start:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .loading-overlay.visible {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid var(--jub-light-gray);
+      border-top-color: var(--jub-dark);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      font-size: 18px;
+      color: var(--jub-dark);
+      font-weight: 500;
+    }
+
+    .loading-subtext {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Progress dots */
+    .loading-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .loading-dots span {
+      width: 10px;
+      height: 10px;
+      background: var(--jub-dark);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .loading-dots span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    /* Result Section */
+    .result-section {
+      display: none;
+      padding: 32px;
+    }
+
+    .result-section.visible {
+      display: block;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .result-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .btn-reset {
+      padding: 10px 20px;
+      background: transparent;
+      border: 1px solid var(--jub-dark);
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-reset:hover {
+      background: var(--jub-dark);
+      color: white;
+    }
+
+    .result-image-container {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px var(--jub-shadow);
+    }
+
+    #resultImage {
+      width: 100%;
+      display: block;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .footer a {
+      color: var(--jub-dark);
+      text-decoration: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        padding: 12px 16px;
+      }
+
+      .main {
+        padding: 24px 16px;
+      }
+
+      .step {
+        padding: 24px 20px;
+      }
+
+      .color-swatch {
+        width: 60px;
+      }
+
+      .swatch-circle {
+        width: 48px;
+        height: 48px;
+      }
+
+      .btn-start {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <img src="https://www.jub.si/app/uploads/2023/06/logo-w.svg" alt="JUB" class="logo">
+    <span class="header-title">AI Barvanje Sten</span>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="title-section">
+      <h1>Pobarvaujte sobe v vaših barvah</h1>
+      <p>Naložite sliko svojega prostora, opišite steno ki jo želite spremeniti, izberite barvo in pustite AI, da opravi
+        ostalo.</p>
+    </div>
+
+    <div class="app-container">
+      <div class="steps">
+        <!-- Step 1: Upload -->
+        <div class="step">
+          <div class="step-header">
+            <div class="step-number">1</div>
+            <h2 class="step-title">Naložite sliko prostora</h2>
+          </div>
+          <div class="upload-area" id="uploadArea">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p class="upload-text"><strong>Kliknite za nalaganje</strong> ali povlecite sliko sem</p>
+          </div>
+          <input type="file" id="fileInput" accept="image/*">
+
+          <div class="image-preview" id="imagePreview">
+            <img id="uploadedImage" src="" alt="Naložena slika">
+          </div>
+          <div class="wall-input" id="wallInput">
+            <label for="wallDescription">Katero steno želite pobarvati? Opišite čim bolj natančno.</label>
+            <textarea id="wallDescription" placeholder="Npr. leva stena za kavčem, celotna stena z oknom, zgornji del stopnišča..."></textarea>
+          </div>
+          <div class="wall-actions" id="wallActions">
+            <button class="btn-clear" id="btnNewImage">Nova slika</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Choose Color -->
+        <div class="step">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <h2 class="step-title">Izberite barvo</h2>
+          </div>
+          <div class="color-palette" id="colorPalette">
+            <div class="color-swatch color-1 active" data-color="1">
+              <div class="swatch-circle"></div>
+              <div class="swatch-name">Joy 10</div>
+            </div>
+            <div class="color-swatch color-2" data-color="2">
+              <div class="swatch-circle"></div>
+              <div class="swatch-name">Freedom 15</div>
+            </div>
+            <div class="color-swatch color-3" data-color="3">
+              <div class="swatch-circle"></div>
+              <div class="swatch-name">Passion 15</div>
+            </div>
+            <div class="color-swatch color-4" data-color="4">
+              <div class="swatch-circle"></div>
+              <div class="swatch-name">Vitality 30</div>
+            </div>
+            <div class="color-swatch color-5" data-color="5">
+              <div class="swatch-circle"></div>
+              <div class="swatch-name">Faith 20</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Section -->
+      <div class="action-section">
+        <button class="btn-start" id="btnStart" disabled>
+          <span>Ustvari pobarvano sobo</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14" />
+            <path d="M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Result Section -->
+      <div class="result-section" id="resultSection">
+        <div class="result-header">
+          <h3 class="result-title">Vaša pobarvana soba</h3>
+          <button class="btn-reset" id="btnReset">Poskusi znova</button>
+        </div>
+        <div class="result-image-container">
+          <img id="resultImage" src="" alt="Rezultat">
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Napajano z <a href="https://ai.google.dev" target="_blank">Google Gemini AI</a> • © 2024 <a
+          href="https://www.jub.si" target="_blank">JUB</a></p>
+    </div>
+  </main>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AI ustvarja vašo sobo...</div>
+    <div class="loading-subtext">To lahko traja nekaj sekund</div>
+    <div class="loading-dots">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const uploadedImage = document.getElementById('uploadedImage');
+    const wallInput = document.getElementById('wallInput');
+    const wallDescription = document.getElementById('wallDescription');
+    const wallActions = document.getElementById('wallActions');
+    const btnNewImage = document.getElementById('btnNewImage');
+    const colorPalette = document.getElementById('colorPalette');
+    const btnStart = document.getElementById('btnStart');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const resultSection = document.getElementById('resultSection');
+    const resultImage = document.getElementById('resultImage');
+    const btnReset = document.getElementById('btnReset');
+
+    async function loadColorDefs() {
+      try {
+        const response = await fetch('/color-defs/colors.json');
+        if (!response.ok) {
+          return;
+        }
+        const defs = await response.json();
+        const rootStyle = document.documentElement.style;
+        Object.entries(defs).forEach(([key, value]) => {
+          if (!value || !value.hex) return;
+          rootStyle.setProperty(`--color-${key}`, value.hex);
+          const swatch = document.querySelector(`.color-swatch[data-color="${key}"] .swatch-name`);
+          if (swatch && value.name) {
+            swatch.textContent = value.name;
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to load color definitions', err);
+      }
+    }
+
+    loadColorDefs();
+
+    // State
+    let originalImageDataUrl = '';
+    let selectedColor = 1;
+
+    // Upload handlers
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = 'var(--jub-dark)';
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.borderColor = '';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        loadImage(file);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        loadImage(e.target.files[0]);
+      }
+    });
+
+    function loadImage(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          originalImageDataUrl = e.target.result;
+          uploadedImage.src = originalImageDataUrl;
+
+          // Show preview + input, hide upload
+          uploadArea.style.display = 'none';
+          imagePreview.classList.add('visible');
+          wallInput.classList.add('visible');
+          wallActions.classList.add('visible');
+          resultSection.classList.remove('visible');
+
+          // Enable start button
+          updateStartButton();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateStartButton() {
+      const hasImage = originalImageDataUrl.length > 0;
+      const hasDescription = wallDescription.value.trim().length > 0;
+      btnStart.disabled = !(hasImage && hasDescription);
+    }
+
+    wallDescription.addEventListener('input', updateStartButton);
+
+    // New image
+    btnNewImage.addEventListener('click', () => {
+      originalImageDataUrl = '';
+      uploadedImage.src = '';
+      imagePreview.classList.remove('visible');
+      wallInput.classList.remove('visible');
+      wallActions.classList.remove('visible');
+      uploadArea.style.display = '';
+      btnStart.disabled = true;
+      resultSection.classList.remove('visible');
+      fileInput.value = '';
+      wallDescription.value = '';
+    });
+
+    // Color selection
+    colorPalette.addEventListener('click', (e) => {
+      const swatch = e.target.closest('.color-swatch');
+      if (swatch) {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        selectedColor = parseInt(swatch.dataset.color);
+      }
+    });
+
+    // Start processing
+    btnStart.addEventListener('click', async () => {
+      if (!originalImageDataUrl) return;
+
+      // Show loading
+      loadingOverlay.classList.add('visible');
+
+      try {
+        const response = await fetch('/api/colorize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            original_image: originalImageDataUrl,
+            color: selectedColor,
+            wall_description: wallDescription.value.trim()
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Show result
+        resultImage.src = data.image;
+        resultSection.classList.add('visible');
+
+      } catch (err) {
+        console.error(err);
+        alert('Napaka pri obdelavi slike: ' + err.message);
+      } finally {
+        loadingOverlay.classList.remove('visible');
+      }
+    });
+
+    // Reset
+    btnReset.addEventListener('click', () => {
+      resultSection.classList.remove('visible');
+    });
+  </script>
+</body>
+
+</html>
