@@ -4,6 +4,7 @@ import mimetypes
 import os
 import traceback
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -27,6 +28,7 @@ class ColorizeRequest(BaseModel):
     original_image: str  # data URL of clean original image
     color: int  # 1-5 (color selection)
     wall_description: str  # text description of wall(s) to paint
+    mask_image: Optional[str] = None  # data URL of mask image (from MediaPipe segmentation)
 
 
 def _load_color_defs() -> dict:
@@ -45,10 +47,34 @@ def _data_url_to_bytes(data_url: str) -> tuple[bytes, str]:
     return raw, mime_type
 
 
-def _build_prompt(wall_description: str, color_def: dict) -> str:
+def _build_prompt(wall_description: str, color_def: dict, has_mask: bool) -> str:
     rgb = color_def["rgb"]
     hex_value = color_def["hex"]
-    return f"""pobarvaj samo {wall_description} z attachano barvo sliko ki je attached
+
+    if has_mask:
+        # When we have a mask, be very specific about using it
+        return f"""Imam dve sliki:
+1. Originalna slika sobe
+2. Maska ki označuje točno kateri del stene želim pobarvati (obarvano območje na maski)
+
+Pobarvaj SAMO območje ki je označeno na maski z to barvo:
+RGB: {rgb[0]} {rgb[1]} {rgb[2]}
+HEX: {hex_value}
+
+POMEMBNO:
+- Uporabi masko kot vodilo za točno določitev območja barvanja
+- Pobarvaj SAMO označeno območje, nič drugega
+- Ohrani teksturo stene in realistično osvetlitev
+- Ne spreminjaj pohištva, tal, stropa ali drugih predmetov
+- Barva mora biti natančna kot podana (RGB/HEX)
+- Pazi na sence in osvetlitev, da izgleda naravno
+
+{f"Dodatne informacije: {wall_description}" if wall_description and "označeno" not in wall_description else ""}
+
+Začni!"""
+    else:
+        # Fallback to text-only description
+        return f"""Pobarvaj samo {wall_description} z attachano barvo sliko ki je attached
 tvoj cilj je da obarvaš stene (ki jih user hoče da so pobarvane), točno tako kot ta barva:
 RGB
 {rgb[0]} {rgb[1]} {rgb[2]}
@@ -76,7 +102,7 @@ def index() -> HTMLResponse:
 async def colorize(req: ColorizeRequest) -> JSONResponse:
     """Process wall coloring request with Google Gemini image model."""
     try:
-        print(f"Received request for color {req.color}")
+        print(f"Received request for color {req.color}, has_mask: {req.mask_image is not None}")
 
         # Validate color selection
         if req.color < 1 or req.color > 5:
@@ -108,18 +134,27 @@ async def colorize(req: ColorizeRequest) -> JSONResponse:
             )
 
         original_bytes, original_mime = _data_url_to_bytes(req.original_image)
-        prompt = _build_prompt(req.wall_description.strip(), color_def)
+        has_mask = req.mask_image is not None and len(req.mask_image) > 0
+        prompt = _build_prompt(req.wall_description.strip(), color_def, has_mask)
 
         client = genai.Client(api_key=api_key)
         model = "gemini-3-pro-image-preview"
 
+        # Build content parts
+        parts = [
+            types.Part.from_text(text=prompt),
+            types.Part.from_bytes(data=original_bytes, mime_type=original_mime),
+        ]
+
+        # Add mask image if provided
+        if has_mask:
+            mask_bytes, mask_mime = _data_url_to_bytes(req.mask_image)
+            parts.append(types.Part.from_bytes(data=mask_bytes, mime_type=mask_mime))
+
         contents = [
             types.Content(
                 role="user",
-                parts=[
-                    types.Part.from_text(text=prompt),
-                    types.Part.from_bytes(data=original_bytes, mime_type=original_mime),
-                ],
+                parts=parts,
             )
         ]
 
