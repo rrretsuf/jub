@@ -1,0 +1,32 @@
+{
+  "1": {
+    "name": "Joy 10",
+    "hex": "#F3BE93",
+    "rgb": [243, 190, 147],
+    "url": "https://www.jub.si/barve/joy-10/"
+  },
+  "2": {
+    "name": "Freedom 15",
+    "hex": "#AABDDF",
+    "rgb": [170, 189, 223],
+    "url": "https://www.jub.si/barve/freedom-15/"
+  },
+  "3": {
+    "name": "Passion 15",
+    "hex": "#FFADA7",
+    "rgb": [255, 173, 167],
+    "url": "https://www.jub.si/barve/passion-15/"
+  },
+  "4": {
+    "name": "Vitality 30",
+    "hex": "#D2EEEB",
+    "rgb": [210, 238, 235],
+    "url": "https://www.jub.si/barve/vitality-30/"
+  },
+  "5": {
+    "name": "Faith 20",
+    "hex": "#DE8EAD",
+    "rgb": [222, 142, 173],
+    "url": "https://www.jub.si/barve/faith-20/"
+  }
+}
