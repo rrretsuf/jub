@@ -19,6 +19,9 @@ from google.genai import types
 
 app = FastAPI()
 
+FLASH_MODEL = os.environ.get("FLASH_MODEL", "gemini-flash-latest")
+IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gemini-3.1-flash-image-preview")
+
 COLOR_GROUPS = {
     "beauty": [
         {"name": "Beauty 05", "rgb": [179, 116, 51], "hex": "#B37433"},
@@ -179,7 +182,7 @@ USER INSTRUCTIONS:
 
     generated_prompt = ""
     for chunk in client.models.generate_content_stream(
-        model="gemini-flash-latest",
+        model=FLASH_MODEL,
         contents=contents,
         config=generate_content_config,
     ):
@@ -226,7 +229,7 @@ def _generate_single_color_sync(
         text_response = ""
 
         for chunk in client.models.generate_content_stream(
-            model="gemini-3-pro-image-preview",
+            model=IMAGE_MODEL,
             contents=contents,
             config=config,
         ):
@@ -410,7 +413,7 @@ Generate a complete, precise prompt for the image model. Output ONLY the prompt 
 
     edit_prompt = ""
     for chunk in client.models.generate_content_stream(
-        model="gemini-flash-latest",
+        model=FLASH_MODEL,
         contents=contents,
         config=config,
     ):
@@ -451,7 +454,7 @@ Apply the requested changes to this image."""
     output_mime = None
 
     for chunk in client.models.generate_content_stream(
-        model="gemini-3-pro-image-preview",
+        model=IMAGE_MODEL,
         contents=contents,
         config=config,
     ):

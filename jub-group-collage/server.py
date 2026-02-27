@@ -1,8 +1,8 @@
 import asyncio
 import base64
+import json
 import os
 import traceback
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -64,16 +64,15 @@ COLOR_GROUPS = {
     ],
 }
 
+IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "gemini-3.1-flash-image-preview")
+FLASH_MODEL = "gemini-3-pro-preview"
+FORCED_TEMPERATURE = 0.0
+
 
 class TestRequest(BaseModel):
     original_image: str
     wall_description: str
     color_group: str = "beauty"
-
-
-def _load_image_system_prompt_template() -> str:
-    prompt_path = Path(__file__).parent / "prompts" / "image_system_prompt_template.md"
-    return prompt_path.read_text(encoding="utf-8")
 
 
 def _load_flash_system_prompt() -> str:
@@ -92,90 +91,37 @@ def _data_url_to_bytes(data_url: str) -> tuple[bytes, str]:
     return raw, mime_type
 
 
-def _build_prompt(dynamic_system_prompt: str, wall_description: str, color_def: dict) -> str:
-    rgb = color_def["rgb"]
-    hex_value = color_def["hex"]
-    return f"""{dynamic_system_prompt}
+def _build_image_config():
+    if not hasattr(types, "ImageConfig"):
+        return None
 
-User instructions: {wall_description}
-Color to use: RGB({rgb[0]}, {rgb[1]}, {rgb[2]}) / HEX: {hex_value}"""
+    image_size = os.environ.get("IMAGE_SIZE", "2K").strip()
+    if not image_size:
+        return None
+
+    try:
+        return types.ImageConfig(image_size=image_size)
+    except Exception:
+        return None
 
 
-def _generate_dynamic_system_prompt_sync(
+def _generate_collage_sync(
     api_key: str,
     original_bytes: bytes,
     original_mime: str,
-    wall_description: str,
-) -> str:
-    """Generate a scene-specific system prompt using Gemini Flash."""
-    template = _load_image_system_prompt_template()
-    client = genai.Client(api_key=api_key)
-
-    print("[Flash] Generating dynamic system prompt...")
-    flash_system_prompt = _load_flash_system_prompt()
-
-    flash_input = f"""You are generating a system prompt for an image-editing model.
-Use the TEMPLATE below as the base, adapt it to this specific image and the user's instructions.
-Keep the same rules and intent, but add scene-specific cautions if needed.
-Explicitly handle reflections: if walls appear in mirrors/glass, the wall color must be updated in the reflection too.
-Output ONLY the final system prompt. No markdown, no explanations.
-
-TEMPLATE:
-{template}
-
-USER INSTRUCTIONS:
-{wall_description}
-"""
-
-    contents = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text=flash_input),
-                types.Part.from_bytes(data=original_bytes, mime_type=original_mime),
-            ],
-        ),
-    ]
-    generate_content_config = types.GenerateContentConfig(
-        system_instruction=flash_system_prompt,
-        thinking_config=types.ThinkingConfig(
-            thinking_budget=0,
-        ),
-    )
-
-    generated_prompt = ""
-    for chunk in client.models.generate_content_stream(
-        model="gemini-flash-latest",
-        contents=contents,
-        config=generate_content_config,
-    ):
-        if chunk.text:
-            generated_prompt += chunk.text
-
-    generated_prompt = generated_prompt.strip()
-    if not generated_prompt:
-        raise ValueError("Flash prompt generation returned empty text")
-
-    print(f"[Flash] Dynamic system prompt ready ({len(generated_prompt)} chars)")
-    return generated_prompt
-
-
-def _generate_single_color_sync(
-    api_key: str,
-    original_bytes: bytes,
-    original_mime: str,
-    wall_description: str,
-    color_def: dict,
-    dynamic_system_prompt: str,
+    json_output: dict,
 ) -> dict:
-    """Generate image for a single color (synchronous)."""
-    color_name = color_def["name"]
-    print(f"[{color_name}] Starting generation...")
-    
+    print(f"[Collage] Starting generation...")
+
     try:
         client = genai.Client(api_key=api_key)
-        prompt = _build_prompt(dynamic_system_prompt, wall_description, color_def)
-        
+        prompt = json.dumps(json_output, indent=2)
+
+        print("[Collage] JSON prompt sent to image model:")
+        print(prompt)
+        print("[Collage] End JSON prompt")
+        print(f"[Collage] Model: {IMAGE_MODEL}")
+
         contents = [
             types.Content(
                 role="user",
@@ -185,61 +131,161 @@ def _generate_single_color_sync(
                 ],
             )
         ]
-        config = types.GenerateContentConfig(response_modalities=["IMAGE"])
+        image_config = _build_image_config()
+        try:
+            if image_config is not None:
+                config = types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    image_config=image_config,
+                    temperature=FORCED_TEMPERATURE,
+                )
+            else:
+                config = types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    temperature=FORCED_TEMPERATURE,
+                )
+        except TypeError:
+            try:
+                config = types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    temperature=FORCED_TEMPERATURE,
+                )
+            except TypeError:
+                config = types.GenerateContentConfig(response_modalities=["IMAGE"])
 
         output_image_data = None
         output_mime = None
         text_response = ""
 
         for chunk in client.models.generate_content_stream(
-            model="gemini-3.1-flash-image-preview",
+            model=IMAGE_MODEL,
             contents=contents,
             config=config,
         ):
             if chunk.candidates is None:
-                print(f"[{color_name}] Chunk has no candidates")
+                print("[Collage] Chunk has no candidates")
                 continue
             if chunk.candidates[0].content is None:
-                print(f"[{color_name}] Candidate has no content")
+                print("[Collage] Candidate has no content")
                 continue
             if chunk.candidates[0].content.parts is None:
-                print(f"[{color_name}] Content has no parts")
+                print("[Collage] Content has no parts")
                 continue
-                
+
             for part in chunk.candidates[0].content.parts:
                 if part.text:
                     text_response += part.text
                 if part.inline_data and part.inline_data.data:
                     output_image_data = part.inline_data.data
                     output_mime = part.inline_data.mime_type
-                    print(f"[{color_name}] Got image data, mime: {output_mime}")
+                    print(f"[Collage] Got image data, mime: {output_mime}")
                     break
             if output_image_data:
                 break
 
         if text_response:
-            print(f"[{color_name}] Text response: {text_response[:200]}...")
+            print(f"[Collage] Text response: {text_response[:200]}...")
 
         if not output_image_data:
-            print(f"[{color_name}] NO IMAGE RETURNED")
+            print("[Collage] NO IMAGE RETURNED")
             error_msg = "No image returned"
             if text_response:
                 error_msg = f"Model returned text: {text_response[:100]}"
-            return {"name": color_name, "hex": color_def["hex"], "error": error_msg}
+            return {"error": error_msg}
 
-        print(f"[{color_name}] SUCCESS - image size: {len(output_image_data)} bytes")
+        print(f"[Collage] SUCCESS - image size: {len(output_image_data)} bytes")
         b64 = base64.b64encode(output_image_data).decode("utf-8")
         mime = output_mime or "image/png"
-        return {
-            "name": color_name,
-            "hex": color_def["hex"],
-            "image": f"data:{mime};base64,{b64}",
-        }
+        return {"image": f"data:{mime};base64,{b64}"}
 
     except Exception as e:
-        print(f"[{color_name}] ERROR: {e}")
+        print(f"[Collage] ERROR: {e}")
         traceback.print_exc()
-        return {"name": color_name, "hex": color_def["hex"], "error": str(e)}
+        return {"error": str(e)}
+
+
+def _generate_dynamic_prompt_sync(
+    api_key: str,
+    original_bytes: bytes,
+    original_mime: str,
+    wall_description: str,
+    colors: list[dict],
+) -> dict:
+    client = genai.Client(api_key=api_key)
+
+    print("[Flash] Generating dynamic system prompt...")
+    flash_system_prompt = _load_flash_system_prompt()
+
+    color_plan_input = []
+    for i, c in enumerate(colors, start=1):
+        color_plan_input.append({
+            "position": i,
+            "name": c["name"],
+            "hex": c["hex"],
+            "rgb": c["rgb"]
+        })
+
+    user_input = f"""Analyze the image and generate a JSON prompt for wall recoloring.
+
+USER INSTRUCTIONS:
+{wall_description}
+
+COLOR PLAN (use these exact colors):
+{json.dumps(color_plan_input, indent=2)}
+"""
+
+    contents = [
+        types.Content(
+            role="user",
+            parts=[
+                types.Part.from_bytes(data=original_bytes, mime_type=original_mime),
+                types.Part.from_text(text=user_input),
+            ],
+        ),
+    ]
+
+    thinking_config_kwargs = {}
+    if hasattr(types.ThinkingConfig, "thinking_level"):
+        thinking_config_kwargs["thinking_level"] = "LOW"
+    else:
+        thinking_config_kwargs["thinking_budget"] = 1024
+
+    generate_content_config = types.GenerateContentConfig(
+        system_instruction=flash_system_prompt,
+        thinking_config=types.ThinkingConfig(**thinking_config_kwargs),
+    )
+
+    generated_text = ""
+    for chunk in client.models.generate_content_stream(
+        model=FLASH_MODEL,
+        contents=contents,
+        config=generate_content_config,
+    ):
+        if chunk.text:
+            generated_text += chunk.text
+
+    generated_text = generated_text.strip()
+    if not generated_text:
+        raise ValueError("Flash prompt generation returned empty text")
+
+    if generated_text.startswith("```json"):
+        generated_text = generated_text[7:]
+    if generated_text.startswith("```"):
+        generated_text = generated_text[3:]
+    if generated_text.endswith("```"):
+        generated_text = generated_text[:-3]
+    generated_text = generated_text.strip()
+
+    try:
+        json_output = json.loads(generated_text)
+    except json.JSONDecodeError as e:
+        print(f"[Flash] JSON parse error: {e}")
+        print(f"[Flash] Raw output: {generated_text[:500]}...")
+        raise ValueError(f"Flash returned invalid JSON: {e}")
+
+    print(f"[Flash] JSON output ready")
+    print(json.dumps(json_output, indent=2))
+    return json_output
 
 
 @app.get("/")
@@ -253,7 +299,6 @@ def index() -> HTMLResponse:
 
 @app.get("/api/color-groups")
 def get_color_groups() -> JSONResponse:
-    """Return available color groups."""
     return JSONResponse({
         "groups": list(COLOR_GROUPS.keys()),
         "colors": COLOR_GROUPS,
@@ -262,7 +307,6 @@ def get_color_groups() -> JSONResponse:
 
 @app.post("/api/colorize-test")
 async def colorize_test(req: TestRequest) -> JSONResponse:
-    """Process wall coloring for selected color group."""
     try:
         color_group = req.color_group.lower()
         if color_group not in COLOR_GROUPS:
@@ -281,35 +325,33 @@ async def colorize_test(req: TestRequest) -> JSONResponse:
 
         original_bytes, original_mime = _data_url_to_bytes(req.original_image)
         wall_desc = req.wall_description.strip()
-        dynamic_system_prompt = _generate_dynamic_system_prompt_sync(
+
+        json_output = _generate_dynamic_prompt_sync(
             api_key=api_key,
             original_bytes=original_bytes,
             original_mime=original_mime,
             wall_description=wall_desc,
+            colors=colors,
         )
 
-        loop = asyncio.get_event_loop()
-        
-        # Limit to 3 parallel to avoid rate limits
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            tasks = [
-                loop.run_in_executor(
-                    executor,
-                    _generate_single_color_sync,
-                    api_key,
-                    original_bytes,
-                    original_mime,
-                    wall_desc,
-                    color,
-                    dynamic_system_prompt,
-                )
-                for color in colors
-            ]
-            results = await asyncio.gather(*tasks)
+        result = await asyncio.to_thread(
+            _generate_collage_sync,
+            api_key,
+            original_bytes,
+            original_mime,
+            json_output,
+        )
 
         print("=" * 50)
-        print(f"All {len(colors)} generations complete")
-        return JSONResponse({"results": list(results)})
+        if result.get("error"):
+            return JSONResponse({"error": result["error"]}, status_code=500)
+
+        return JSONResponse({
+            "image": result["image"],
+            "colors": colors,
+            "rows": 3,
+            "cols": 3,
+        })
 
     except Exception as e:
         print("Error processing test request:")

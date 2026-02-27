@@ -16,3 +16,5 @@ In edit mode, focus on the user's specific edit request. Common examples:
 Generate a precise edit prompt that fixes ONLY what the user requested while preserving the rest.
 
 Output ONLY the final system prompt text. No markdown, no explanations.
+
+MODEL MUST RETURN JUST THE IMAGE EVERY TIME!!!!!!

@@ -211,7 +211,7 @@ def _generate_single_color_sync(
         text_response = ""
 
         for chunk in client.models.generate_content_stream(
-            model="gemini-3-pro-image-preview",
+            model="gemini-3.1-flash-image-preview",
             contents=contents,
             config=config,
         ):
@@ -435,7 +435,7 @@ Apply the requested changes to this image."""
     output_mime = None
 
     for chunk in client.models.generate_content_stream(
-        model="gemini-3-pro-image-preview",
+        model="gemini-3.1-flash-image-preview",
         contents=contents,
         config=config,
     ):

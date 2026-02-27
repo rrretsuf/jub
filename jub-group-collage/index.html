@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="sl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JUB Odtenki Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --jub-dark: #1c1c1c;
+      --jub-light-gray: #E5E5E2;
+      --jub-off-white: #f8f7f4;
+      --jub-shadow: rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: white;
+      color: var(--jub-dark);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--jub-dark);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      height: 40px;
+    }
+
+    .header-title {
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .title-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .title-section h1 {
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .title-section p {
+      font-size: 16px;
+      color: #666;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .input-section {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 8px 40px var(--jub-shadow);
+      margin-bottom: 40px;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: stretch;
+    }
+
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 768px) {
+      .input-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .upload-area {
+      border: 2px dashed var(--jub-light-gray);
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--jub-off-white);
+      min-height: 200px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-area:hover {
+      border-color: var(--jub-dark);
+      background: white;
+    }
+
+    .upload-area.has-image {
+      padding: 16px;
+      border-style: solid;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .upload-text {
+      color: #666;
+      font-size: 15px;
+    }
+
+    .upload-text strong {
+      color: var(--jub-dark);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .image-preview {
+      display: none;
+      width: 100%;
+      flex: 1;
+      border: 2px solid var(--jub-light-gray);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--jub-off-white);
+    }
+
+    .image-preview.visible {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #uploadedImage {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      max-height: 300px;
+      margin: 0 auto;
+      border-radius: 12px;
+    }
+
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .right-panel label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--jub-dark);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .right-panel textarea {
+      width: 100%;
+      min-height: 100px;
+      border-radius: 12px;
+      border: 1px solid var(--jub-light-gray);
+      padding: 16px;
+      font-size: 14px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .right-panel select {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--jub-light-gray);
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+    }
+
+    .color-preview {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .color-preview-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px var(--jub-shadow);
+      border: 2px solid white;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-generate {
+      flex: 1;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--jub-dark);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      background: #333;
+      transform: translateY(-2px);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-clear {
+      padding: 16px 24px;
+      background: transparent;
+      border: 1px solid var(--jub-dark);
+      border-radius: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover {
+      background: var(--jub-dark);
+      color: white;
+    }
+
+    /* Results */
+    .results-section {
+      display: none;
+    }
+
+    .results-section.visible {
+      display: block;
+    }
+
+    .results-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .results-grid {
+      display: block;
+    }
+
+    .collage-container {
+      position: relative;
+      background: white;
+      padding: 20px;
+      border: 1px solid var(--jub-light-gray);
+      border-radius: 18px;
+    }
+
+    .collage-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+
+    .collage-image {
+      width: 100%;
+      display: block;
+      background: white;
+    }
+
+    .download-btn {
+      padding: 10px 14px;
+      background: var(--jub-dark);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .download-btn:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    .result-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+    }
+
+    .result-loading.hidden {
+      display: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--jub-light-gray);
+      border-top-color: var(--jub-dark);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .result-error {
+      padding: 20px;
+      text-align: center;
+      color: #c00;
+      font-size: 14px;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .loading-overlay.visible {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid var(--jub-light-gray);
+      border-top-color: var(--jub-dark);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .progress-bar {
+      width: 300px;
+      height: 6px;
+      background: var(--jub-light-gray);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--jub-dark);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 32px;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .footer a {
+      color: var(--jub-dark);
+      text-decoration: none;
+    }
+
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <img src="https://www.jub.si/app/uploads/2023/06/logo-w.svg" alt="JUB" class="logo">
+    <span class="header-title">Odtenki Test</span>
+  </header>
+
+  <main class="main">
+    <div class="title-section">
+      <h1>Test JUB Odtenkov</h1>
+      <p>Naložite sliko, izberite skupino odtenkov, opišite steno - AI bo generiral en kolaž vseh različic.</p>
+    </div>
+
+    <div class="input-section">
+      <div class="input-grid">
+        <div class="left-panel" id="leftPanel">
+          <div class="upload-area" id="uploadArea">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p class="upload-text"><strong>Kliknite za nalaganje</strong> ali povlecite sliko</p>
+          </div>
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="image-preview" id="imagePreview">
+            <img id="uploadedImage" src="" alt="Naložena slika">
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div>
+            <label for="colorGroup">Izberite skupino odtenkov</label>
+            <select id="colorGroup">
+              <option value="beauty">Beauty (topli odtenki)</option>
+              <option value="faith">Faith (sivi odtenki)</option>
+              <option value="family">Family (rožnati odtenki)</option>
+              <option value="passion">Passion (rdeči odtenki)</option>
+              <option value="vitality">Vitality (turkizni odtenki)</option>
+            </select>
+            <div class="color-preview" id="colorPreview"></div>
+          </div>
+          <div>
+            <label for="wallDescription">Katero steno želite pobarvati?</label>
+            <textarea id="wallDescription"
+              placeholder="Npr. leva stena za kavčem, celotna stena z oknom..."></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn-generate" id="btnGenerate" disabled>Generiraj odtenke</button>
+            <button class="btn-clear" id="btnClear">Počisti</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-section" id="resultsSection">
+      <h2 class="results-title">Kolaž odtenkov</h2>
+      <div class="results-grid" id="resultsGrid"></div>
+    </div>
+
+    <div class="footer">
+      <p>Napajano z <a href="https://ai.google.dev" target="_blank">Google Gemini AI</a> • © 2024 <a
+          href="https://www.jub.si" target="_blank">JUB</a></p>
+    </div>
+  </main>
+
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">Generiram kolaž...</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+  </div>
+
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const uploadedImage = document.getElementById('uploadedImage');
+    const wallDescription = document.getElementById('wallDescription');
+    const colorGroup = document.getElementById('colorGroup');
+    const colorPreview = document.getElementById('colorPreview');
+    const btnGenerate = document.getElementById('btnGenerate');
+    const btnClear = document.getElementById('btnClear');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const progressFill = document.getElementById('progressFill');
+    const resultsSection = document.getElementById('resultsSection');
+    const resultsGrid = document.getElementById('resultsGrid');
+
+    let originalImageDataUrl = '';
+    let colorGroups = {};
+
+    // Load color groups from server
+    async function loadColorGroups() {
+      try {
+        const response = await fetch('/api/color-groups');
+        const data = await response.json();
+        colorGroups = data.colors;
+        updateColorPreview();
+      } catch (e) {
+        console.error('Failed to load color groups:', e);
+      }
+    }
+
+    function updateColorPreview() {
+      const group = colorGroup.value;
+      const colors = colorGroups[group] || [];
+      colorPreview.innerHTML = colors.map(c => 
+        `<div class="color-preview-dot" style="background: ${c.hex}" title="${c.name}"></div>`
+      ).join('');
+    }
+
+    colorGroup.addEventListener('change', updateColorPreview);
+    loadColorGroups();
+
+    // Upload handlers
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = 'var(--jub-dark)';
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.borderColor = '';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        loadImage(file);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        loadImage(e.target.files[0]);
+      }
+    });
+
+    function loadImage(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        originalImageDataUrl = e.target.result;
+        uploadedImage.src = originalImageDataUrl;
+        uploadArea.style.display = 'none';
+        imagePreview.classList.add('visible');
+        updateButton();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateButton() {
+      const hasImage = originalImageDataUrl.length > 0;
+      const hasDesc = wallDescription.value.trim().length > 0;
+      btnGenerate.disabled = !(hasImage && hasDesc);
+    }
+
+    wallDescription.addEventListener('input', updateButton);
+
+    btnClear.addEventListener('click', () => {
+      originalImageDataUrl = '';
+      uploadedImage.src = '';
+      imagePreview.classList.remove('visible');
+      uploadArea.style.display = '';
+      wallDescription.value = '';
+      fileInput.value = '';
+      btnGenerate.disabled = true;
+      resultsSection.classList.remove('visible');
+      resultsGrid.innerHTML = '';
+    });
+
+    // Generate
+    btnGenerate.addEventListener('click', async () => {
+      if (!originalImageDataUrl || !wallDescription.value.trim()) return;
+
+      const selectedGroup = colorGroup.value;
+      const numColors = (colorGroups[selectedGroup] || []).length;
+      
+      loadingText.textContent = `Generiram kolaž (${numColors} odtenkov)...`;
+      loadingOverlay.classList.add('visible');
+      progressFill.style.width = '0%';
+      resultsSection.classList.remove('visible');
+      resultsGrid.innerHTML = '';
+
+      // Simulate progress
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += Math.random() * 8;
+        if (progress > 90) progress = 90;
+        progressFill.style.width = progress + '%';
+      }, 500);
+
+      try {
+        const response = await fetch('/api/colorize-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            original_image: originalImageDataUrl,
+            wall_description: wallDescription.value.trim(),
+            color_group: selectedGroup
+          })
+        });
+
+        const data = await response.json();
+
+        clearInterval(progressInterval);
+        progressFill.style.width = '100%';
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Render collage
+        renderCollage(data, selectedGroup);
+
+      } catch (err) {
+        console.error(err);
+        alert('Napaka: ' + err.message);
+      } finally {
+        setTimeout(() => {
+          loadingOverlay.classList.remove('visible');
+        }, 300);
+      }
+    });
+
+    function renderCollage(data, group) {
+      resultsGrid.innerHTML = '';
+      resultsSection.classList.add('visible');
+
+      if (data.error) {
+        resultsGrid.innerHTML = `<div class="result-error">Napaka: ${data.error}</div>`;
+        return;
+      }
+
+      const groupLabel = group.charAt(0).toUpperCase() + group.slice(1);
+      resultsGrid.innerHTML = `
+        <div class="collage-container">
+          <div class="collage-toolbar">
+            <button class="download-btn" id="downloadBtn">Prenesi kolaž</button>
+          </div>
+          <img class="collage-image" src="${data.image}" alt="Kolaž ${groupLabel}" data-name="Kolaz ${groupLabel}">
+        </div>
+      `;
+
+      const downloadBtn = document.getElementById('downloadBtn');
+      const collageImg = resultsGrid.querySelector('.collage-image');
+      if (downloadBtn && collageImg) {
+        downloadBtn.addEventListener('click', () => {
+          const filename = collageImg.dataset.name.toLowerCase().replace(/\s+/g, '-') + '.png';
+          const link = document.createElement('a');
+          link.href = collageImg.src;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>
